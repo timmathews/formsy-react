@@ -280,6 +280,7 @@ Formsy.Form = React.createClass({
   // and check their state
   validateForm: function () {
     var allIsValid = true;
+    var errors = {};
     var inputs = this.inputs;
     var inputKeys = Object.keys(inputs);
 
@@ -287,8 +288,12 @@ Formsy.Form = React.createClass({
     // run when the last component has set its state
     var onValidationComplete = function () {
       inputKeys.forEach(function (name) {
-        if (!inputs[name].state._isValid) {
+        var component = inputs[name];
+        if (!component.state._isValid) {
           allIsValid = false;
+          if(!component.isPristine()) {
+            errors[component.props.name] = component.getErrorMessage();
+          }
         }
       }.bind(this));
 
@@ -299,7 +304,7 @@ Formsy.Form = React.createClass({
       if (allIsValid) {
         this.props.onValid();
       } else {
-        this.props.onInvalid();
+        this.props.onInvalid(errors);
       }
 
       // Tell the form that it can start to trigger change events
