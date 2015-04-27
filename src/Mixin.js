@@ -121,8 +121,8 @@ module.exports = {
   isRequired: function () {
     return !!this.props.required;
   },
-  showRequired: function () {
-    return this.isRequired() && this.state._value === '';
+  showRequired: function (always) {
+    return this.isRequired() && (this.state._value === '' || always);
   },
   showError: function () {
     return !this.showRequired() && !this.state._isValid;
