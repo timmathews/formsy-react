@@ -1,76 +1,42 @@
-var csrfTokenSelector = typeof document != 'undefined' ? document.querySelector('meta[name="csrf-token"]') : null;
-
-var toURLEncoded = function (element, key, list) {
-  var list = list || [];
-  if (typeof (element) == 'object') {
-    for (var idx in element)
-      toURLEncoded(element[idx], key ? key + '[' + idx + ']' : idx, list);
-  } else {
-    list.push(key + '=' + encodeURIComponent(element));
-  }
-  return list.join('&');
-};
-
-var request = function (method, url, data, contentType, headers) {
-
-  var contentType = contentType === 'urlencoded' ? 'application/' + contentType.replace('urlencoded', 'x-www-form-urlencoded') : 'application/json';
-  data = contentType === 'application/json' ? JSON.stringify(data) : toURLEncoded(data);
-
-  return new Promise(function (resolve, reject) {
-    try {
-      var xhr = new XMLHttpRequest();
-      xhr.open(method, url, true);
-      xhr.setRequestHeader('Accept', 'application/json');
-      xhr.setRequestHeader('Content-Type', contentType);
-
-      if (!!csrfTokenSelector && !!csrfTokenSelector.content) {
-        xhr.setRequestHeader('X-CSRF-Token', csrfTokenSelector.content);
-      }
-
-      // Add passed headers
-      Object.keys(headers).forEach(function (header) {
-        xhr.setRequestHeader(header, headers[header]);
-      });
-
-      xhr.onreadystatechange = function () {
-        if (xhr.readyState === 4) {
-
-          try {
-            var response = xhr.responseText ? JSON.parse(xhr.responseText) : null;
-            if (xhr.status >= 200 && xhr.status < 300) {
-              resolve(response);
-            } else {
-              reject(response);
-            }
-          } catch (e) {
-            reject(e);
-          }
-
-        }
-      };
-      xhr.send(data);
-    } catch (e) {
-      reject(e);
-    }
-  });
-};
-
 module.exports = {
-  arraysDiffer: function (arrayA, arrayB) {
+  arraysDiffer: function (a, b) {
     var isDifferent = false;
-    if (arrayA.length !== arrayB.length) {
+    if (a.length !== b.length) {
       isDifferent = true;
     } else {
-      arrayA.forEach(function (item, index) {
-        if (item !== arrayB[index]) {
+      a.forEach(function (item, index) {
+        if (!this.isSame(item, b[index])) {
           isDifferent = true;
         }
-      });
+      }, this);
     }
     return isDifferent;
   },
-  ajax: {
-    post: request.bind(null, 'POST'),
-    put: request.bind(null, 'PUT')
+  objectsDiffer: function (a, b) {
+    var isDifferent = false;
+    if (Object.keys(a).length !== Object.keys(b).length) {
+      isDifferent = true;
+    } else {
+      Object.keys(a).forEach(function (key) {
+        if (!this.isSame(a[key], b[key])) {
+          isDifferent = true;
+        }
+      }, this);
+    }
+    return isDifferent;   
+  },
+  isSame: function (a, b) {
+    
+    if (a !== b) {
+      return false;
+    }
+
+    if (Array.isArray(a)) {
+      return !this.arraysDiffer(a, b);
+    } else if (typeof a === 'object' && a !== null) {
+      return !this.objectsDiffer(a, b);
+    }
+
+    return true;
   }
 };

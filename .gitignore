@@ -1,4 +1,3 @@
 .DS_Store
-build/index.html
-build/test.js
+build
 node_modules
